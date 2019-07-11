@@ -1,0 +1,1032 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Sentence Drag and Drop - Current Version</title>
+<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<script type="text/javascript" src="jqdrag.js"></script>
+<script type="text/javascript" src="jqdraglive.js"></script>
+<script type="text/javascript" src="jqdrop.js"></script>
+<script type="text/javascript" src="jqdroplive.js"></script>
+<link type="text/css" rel="stylesheet" href="style_v03.css">
+</head>
+
+<body>
+<script type="text/javascript">
+
+//To do:
+//1. Choose colors to decorate blocks in various categories
+//2. Subdivide grammar labels into logical categories
+//	 (sentence parts vs. parts of speech, for instance)
+//3. Divs within a div when combining? To keep label colors
+//	 and text labels for smaller units within larger units of sentence.
+//	 Words within phrases within clauses--that's three layers deep
+//	 Can achieve that using classes: word, phrase, clause
+//4. Refine interface
+//5. Stop drag when furthermost block hits canvas edge
+
+jQuery(function($){
+	var z = 1;
+	var canvasBlocks = []; //declare array to keep track of canvas blocks
+	var textLabels = []; //declare array to keep track of text labels
+	var blocksNextIndex = 0; // keep track of index values in canvasBlocks array
+	var combinationsNextIndex = 0; // keep track of combinations made
+    var $canvas = $('#container'); //set up variable for canvas
+	var canvasMargin = 5; //simulate padding in canvas
+	var appendMargin = 10; //place blocks further in than canvasMargin
+	var blockSpacer = 5; //create margin between blocks and rows
+	var labelSpacer = 2; //create margin between blocks and labels
+	var leftValue = $canvas.offset().left + appendMargin; //set up margin between blocks and left edge of canvas
+	var topValue = $canvas.offset().top + appendMargin; //set up margin between blocks and top edge of canvas
+	var controlOptionPairs =   { //key is the action and "id of control button"; value is "id of option container"
+								add_label:"labels",
+								add_conjunction:"conjunctions",
+								add_tw:"transition_words",
+								add_dw:"dependent_words",
+								add_punctuation:"punctuation_marks",
+								};
+	var labelTextPairs =   { //key is "id of label option button"; value is "text of assigned label"
+							subject:"S",
+							verb:"V",
+							indirect_object:"IO",
+							direct_object:"DO",
+							noun_phrase:"NP",
+							verb_phrase:"VP",
+							prep_phrase:"PP",
+							modifier:"M",
+							dependent_clause:"DC",
+							independent_clause:"IC",
+							};
+	var labels =   { //key is "id of label option button"; value is "text of label option button"
+					subject:"subject",
+					verb:"verb",
+					indirect_object:"indirect object",
+					direct_object:"direct object",
+					noun_phrase:"noun phrase",
+					verb_phrase:"verb phrase",
+					prep_phrase:"prepositional phrase",
+					modifier:"modifier",
+					dependent_clause:"dependent clause",
+					independent_clause:"independent clause",
+					};
+	var conjunctions = { //key is "id of conj option button"; value is "value of conj option button"
+						for_conj: "for",
+						and_conj:"and",
+						nor_conj:"nor",
+						but_conj:"but",
+						or_conj:"or",
+						yet_conj:"yet",
+						so_conj:"so"
+						};
+	var punctuationMarks = { //key is "id of punct option button"; value is "value of punct option button"
+							comma:",",
+							period:".",
+							semicolon:";",
+							colon:":",
+							questionmark:"?",
+							exclamation:"!",
+							quotation:"\"",
+							apostrophe:"\'",
+							leftparens:"(",
+							rightparens:")",
+							slash:"\/",
+							hyphen:"-",
+							dash:"--"
+							};
+	var dependentWords =   { //key is "id of dw option button"; value is "value of dw option button"
+							after_dw:"after",
+							although_dw:"although",
+							as_dw:"as",
+							as_if_dw:"as if",
+							as_long_as_dw:"as long as",
+							because_dw:"because",
+							before_dw:"before",
+							even_if_dw:"even if",
+							even_though_dw:"even though",
+							if_dw:"if",
+							now_that_dw:"now that",
+							once_dw:"once",
+							since_dw:"since",
+							so_that_dw:"so that",
+							though_dw:"though",
+							unless_dw:"unless",
+							until_dw:"until",
+							when_dw:"when",
+							whenever_dw:"whenever",
+							whereas_dw:"whereas",
+							wherever_dw:"wherever",
+							while_dw:"while"
+							};
+	var transitionWords =  { //key is "id of tw option button"; value is "value of tw option button"
+							accordingly_tw:"accordingly",
+							additionally_tw:"additionally",
+							after_all_tw:"after all",
+							afterwards_tw:"afterwards",
+							again_tw:"again",
+							also_tw:"also",
+							as_a_result_tw:"as a result",
+							at_last_tw:"at last",
+							beforehand_tw:"beforehand",
+							besides_tw:"besides",
+							consequently_tw:"consequently",
+							currently_tw:"currently",
+							earlier_tw:"earlier",
+							even_so_tw:"even so",
+							eventually_tw:"eventually",
+							finally_tw:"finally",
+							first_tw:"first",
+							for_example_tw:"for example",
+							for_instance_tw:"for instance",
+							furthermore_tw:"furthermore",
+							hence_tw:"hence",
+							however_tw:"however",
+							immediately_tw:"immediately",
+							in_addition_tw:"in addition",
+							in_conclusion_tw:"in conclusion",
+							in_contrast_tw:"in contrast",
+							in_fact_tw:"in fact",
+							in_other_words_tw:"in other words",
+							in_short_tw:"in short",
+							in_the_end_tw:"in the end",
+							in_the_same_way_tw:"in the same way",
+							indeed_tw:"indeed",
+							initially_tw:"initially",
+							instead_tw:"instead",
+							later_tw:"later",
+							likewise_tw:"likewise",
+							meanwhile_tw:"meanwhile",
+							moreover_tw:"moreover",
+							nearby_tw:"nearby",
+							nevertheless_tw:"nevertheless",
+							next_tw:"next",
+							nonetheless_tw:"nonetheless",
+							now_tw:"now",
+							of_course_tw:"of course",
+							on_the_contrary_tw:"on the contrary",
+							on_the_one_hand_tw:"on the one hand",
+							on_the_other_hand_tw:"on the other hand",
+							on_the_whole_tw:"on the whole",
+							otherwise_tw:"otherwise",
+							recently_tw:"recently",
+							second_tw:"second",
+							similarly_tw:"similarly",
+							simultaneously_tw:"simultaneously",
+							soon_tw:"soon",
+							specifically_tw:"specifically",
+							still_tw:"still",
+							subsequently_tw:"subsequently",
+							that_is_tw:"that is",
+							then_tw:"then",
+							therefore_tw:"therefore",
+							third_tw:"third",
+							thus_tw:"thus",
+							};
+
+// Populate drop-down buttons
+
+	$.each(labels, function( key, value ) {
+		var $option = $('<input/>', {
+			"type": "button",
+			"id": key,
+			"value": value
+		});
+		$('#labels').append($option);
+	});
+
+	$.each(conjunctions, function( key, value ) {
+		var $option = $('<input/>', {
+			"type": "button",
+			"id": key,
+			"value": value
+		});
+		$('#conjunctions').append($option);
+	});
+
+	$.each(transitionWords, function( key, value ) {
+		var $option = $('<input/>', {
+			"type": "button",
+			"id": key,
+			"value": value
+		});
+		$('#transition_words').append($option);
+	});
+
+	$.each(dependentWords, function( key, value ) {
+		var $option = $('<input/>', {
+			"type": "button",
+			"id": key,
+			"value": value
+		});
+		$('#dependent_words').append($option);
+	});
+
+	$.each(punctuationMarks, function( key, value ) {
+		var $option = $('<input/>', {
+			"type": "button",
+			"id": key,
+			"value": value
+		});
+		$('#punctuation_marks').append($option);
+	});
+	
+// Limit selector window to canvas
+	$canvas
+		.click(function(){
+			$(".drag").blur();
+		})
+		.drag("start",function( ev, dd ){
+			return $('<div class="selection" />')
+            .appendTo( document.body );
+		})
+		.drag(function( ev, dd ){
+			$( dd.proxy ).css({
+            top: Math.min( ev.pageY, dd.startY ),
+            left: Math.min( ev.pageX, dd.startX ),
+            height: Math.abs( ev.pageY - dd.startY ),
+            width: Math.abs( ev.pageX - dd.startX )
+			});
+		})
+		.drag("end",function( ev, dd ){
+			$( dd.proxy ).remove();
+		});
+
+// Live delegation of drag and drop handlers
+	$(document)
+		.on("dropstart",".drop",function(){
+			$( this ).addClass("active");                        
+		})
+		.on("drop",".drop",function(){
+			$(this).toggleClass("selected");
+				if($(this).is('.labeled')){
+					var idMatch = $(this).attr('id').replace(/block/, '');
+					$('#label'+idMatch).toggleClass('selected_label');
+				}
+		})
+		.on("dropend",".drop",function(){
+			$( this ).removeClass("active");                        
+		})
+		// Live drag delegation probably not needed
+//		.on("drag",".drag",function( ev, dd ){
+//			dd.limit = $canvas.offset();
+//			dd.limit.bottom = dd.limit.top + $canvas.outerHeight() - $(this).outerHeight();
+//			dd.limit.right = dd.limit.left + $canvas.outerWidth() - $(this).outerWidth();
+//			$(this).css({
+//				top: Math.min( dd.limit.bottom - canvasMargin, Math.max( dd.limit.top + canvasMargin, dd.offsetY ) ),
+//				left: Math.min( dd.limit.right - canvasMargin, Math.max( dd.limit.left + canvasMargin, dd.offsetX ) )
+//			});   
+//		})
+		.on("mouseover",".drag, .text_labels",function(){
+			$('.drag').removeClass('drop');
+		})	  
+		.on("mouseout",".drag, .text_labels",function(){
+			$('.drag').addClass('drop');
+		})
+		// to close all drop-down menus when clicking anywhere except the menu-controlling button
+		.click(function(e){
+			if(!$(e.target).hasClass('control_options')){
+				$('.options').slideUp('fast');
+			}
+		});
+
+// Allow multiple block to be selected at once
+	$.drop({ multi: true });   
+
+// Creates new word blocks from sentence or phrase input
+// removes puntuation, multiple spaces, and starting and trailing spaces
+// send each new block to blockAppend() and bindSelected()
+// splits input into array, then loops to populate canvasBlocks array
+// add "none" item to textlabel array for each new block
+	$('#add_words').click(function(){
+		var wordInput = $("#word_input").val();
+		var wordsToSplit = wordInput.replace(/[!@#\$%\^&\*\(\)_\-\+=\[\]\{\}\\\|;:'",\.\/<>\?`~]/g," ")
+									.replace(/\s{2,}/g," ")
+									.replace(/(^\s+)|(\s+$)/g,"");		
+		var splitWords = wordsToSplit.split(" ");
+		for (i=0; i<splitWords.length; i++){
+			var $block = $('<div/>', {
+				"class": "drag drop",
+				"id": "block" + (i+blocksNextIndex),
+				"contentEditable": "true",
+				text: splitWords[i],
+			});
+			blockAppend($block);
+			bindSelected($block);
+			canvasBlocks.push(splitWords[i]);
+			textLabels.push("none");
+		}
+		blocksNextIndex = canvasBlocks.length;
+		console.log("Labels: " + textLabels);
+		console.log("Blocks: " + canvasBlocks);
+		console.log("Total blocks: " + canvasBlocks.length);
+		console.log("Next index: " + blocksNextIndex);
+	});
+
+// Erase all canvas blocks by class
+// Erase all text_labels, if any
+// Also resets position values
+	$('#clear_canvas').click(function(){
+		z = 1;
+		combinationsNextIndex = 0;
+		leftValue = $canvas.offset().left + appendMargin;
+		topValue = $canvas.offset().top + appendMargin;
+		$('.drag').remove();
+		$('.text_labels').remove();
+		canvasBlocks = []; // empty canvasBlocks array
+		textLabels = []; // empty textLabels array
+		blocksNextIndex = canvasBlocks.length;
+		console.log("Labels: " + textLabels);
+		console.log("Blocks: " + canvasBlocks);
+		console.log("Total blocks: " + canvasBlocks.length);
+		console.log("Next index: " + blocksNextIndex);
+	});
+
+// Remove all labels from all blocks without deleting blocks
+// Instead of emptying textLabels array, gives each key a value of "none"
+	$('#clear_labels').click(function(){
+		$('.drag').removeClass().addClass('drag drop');
+		$('.text_labels').remove();
+		for(i=0; i<canvasBlocks.length; i++){
+			textLabels[i] = "none"; // reset textlabel array		
+		}
+	});
+
+// Selects all blocks and text_labels
+	$('#select_all').click(function(){
+		$('.drag').addClass('selected');
+		$(".drag").each(function(){
+			if($(this).is('.labeled')){
+					var idMatch = $(this).attr('id').replace(/block/, '');
+					$('#label'+idMatch).addClass('selected_label');
+				}		
+		});
+	});
+	
+// Deselects all blocks and text_labels
+	$('#deselect_all').click(function(){
+		$('.selected').removeClass('selected');
+		$('.selected_label').removeClass('selected_label');
+	});
+
+// Puts selected blocks into an array of blocks to be deleted
+// Sends array to deleteBlocks()
+	$('#delete_selected').click(function(){
+		var blocksToDelete = [];
+		
+		if(!$('.selected').length){return;}
+
+		for(i=0; i<canvasBlocks.length; i++){
+			if($("#block"+i).hasClass("selected")){
+				blocksToDelete.push(i);
+			}
+		}
+
+		deleteBlocks(blocksToDelete);
+		blocksNextIndex = canvasBlocks.length;
+// Rebind labels and labeled blocks after deleting other blocks
+		for(i=0; i<canvasBlocks.length; i++){		
+			if($("#block"+i).is('.labeled')){
+				bindLabeled("#block"+i, "#label"+i);
+			}
+		}
+		console.log("Labels: " + textLabels);
+		console.log("Blocks: " + canvasBlocks);
+		console.log("Total blocks: " + canvasBlocks.length);
+		console.log("Next index: " + blocksNextIndex);
+	});
+	
+// Arranges blocks according to their current array order
+// Preserves class list and sends to reappendBlocks()
+	$('#reappend_all').click(function(){
+		var currentWordBlocks = []; // in case any blocks were edited
+		var blockClasses = [];
+		var labelClasses = [];
+		for(i=0; i<canvasBlocks.length; i++){
+			var blockClassList = $("#block"+i).attr('class');
+			blockClasses.push(blockClassList);
+			var labelClassList = $("#label"+i).attr('class');
+			labelClasses.push(labelClassList);
+			currentWordBlocks.push($("#block"+i).text());
+		}
+//		canvasBlocks = currentWordBlocks; //will save currentWordBlocks to primary array
+		reappendBlocks(blockClasses,labelClasses);
+		blocksNextIndex = canvasBlocks.length;
+		console.log("Labels: " + textLabels);
+		console.log("Blocks: " + canvasBlocks);
+		console.log("Total blocks: " + canvasBlocks.length);
+		console.log("Next index: " + blocksNextIndex);
+	});
+	
+// Save position and selected status to arrays
+// Creates new canvasBlocks array and blockClasses array for reappendBlocks()
+	$('#reorder_all').click(function(){
+		var currentWordBlocks = [];
+		var blockClasses = [];
+		var labelClasses = [];
+		for(i=0; i<canvasBlocks.length; i++){
+			currentWordBlocks.push({'text': $("#block"+i).text(),
+			                        'left_position': $("#block"+i).offset().left,
+			                        'block_classes': $("#block"+i).attr('class'),
+			                        'label_classes': $("#label"+i).attr('class'),
+									'text_label':textLabels[i]});
+		}
+		canvasBlocks = [];
+		textLabels = [];
+		currentWordBlocks.sort(function(a,b){
+			return a.left_position-b.left_position
+		});
+
+		for(i=0; i<currentWordBlocks.length; i++){
+			canvasBlocks.push(currentWordBlocks[i].text);
+			blockClasses.push(currentWordBlocks[i].block_classes);
+			labelClasses.push(currentWordBlocks[i].label_classes);
+			textLabels.push(currentWordBlocks[i].text_label);
+		}
+
+		reappendBlocks(blockClasses,labelClasses);
+		blocksNextIndex = canvasBlocks.length;
+		console.log("Labels: " + textLabels);
+		console.log("Blocks: " + canvasBlocks);
+		console.log("Total blocks: " + canvasBlocks.length);
+		console.log("Next index: " + blocksNextIndex);
+	});
+
+// Takes selected blocks and creates two arrays,
+// one with word blocks to make new block to send to blockAppend()
+// one with word blocks to delete to send to deleteBlocks()
+// Arranges words for new block according to left position on canvas
+// sends new block to bindSelected()
+	$('#combine_selected').click(function(){
+		var blocksToCombine = [];
+		var blocksToDelete = [];
+
+		if($('.selected').length<2){return;}
+
+		for(i=0; i<canvasBlocks.length; i++){
+			if($("#block"+i).hasClass("selected")){
+				blocksToCombine.push({'text': $("#block"+i).text(),
+				                    'left_position': $("#block"+i).offset().left,
+				                    'top_position': $("#block"+i).offset().top});
+				blocksToDelete.push(i);
+			}
+		}
+		blocksToCombine.sort(function(a,b){
+			return a.left_position-b.left_position
+		});
+//		var phraseLeftValue = blocksToCombine[0].left_position;
+//		var phraseTopValue = blocksToCombine[0].top_position;
+		var phraseText = "";
+		for(i=0; i<blocksToCombine.length; i++){
+			phraseText = phraseText + blocksToCombine[i].text + " ";
+		}
+		phraseText = phraseText.replace(/(^\s+)|(\s+$)/g,"");
+		var $phrase = $('<div/>', {
+			"class": "drag drop combined",
+			text: phraseText,
+			"contentEditable": "true",
+			"id": "block" + blocksNextIndex,
+		});
+
+		blockAppend($phrase);
+		bindSelected($phrase);
+		canvasBlocks.push(phraseText);
+		textLabels.push("none");
+		deleteBlocks(blocksToDelete);
+		blocksNextIndex = canvasBlocks.length;
+		console.log("Labels: " + textLabels);
+		console.log("Blocks: " + canvasBlocks);
+		console.log("Total blocks: " + canvasBlocks.length);
+		console.log("Next index: " + blocksNextIndex);
+	});
+
+// Preserve selected blocks, appending them to a new "phrase" div
+// Remove them from canvasBlocks() and place them in second dimension of new array item
+// Creates arrays for selected blocks and labels,
+// one to make new block to send to blockAppend()
+// one to send to deleteBlocks()
+// Arranges blocks for new block according to left position on canvas
+// sends new block to bindSelected()
+	$('#combine_selected_2').click(function(){
+		var blocksToCombine = [];
+		var blocksToDelete = [];
+		
+		if($('.selected').length<2){return;}
+
+		for(i=0; i<canvasBlocks.length; i++){
+			if($("#block"+i).hasClass("selected")){
+				blocksToCombine.push(  {'text': $("#block"+i).text(),
+										'left_position': $("#block"+i).offset().left,
+										'classes': $("#block"+i).attr('class'),
+										'text_label': textLabels[i]});
+				blocksToDelete.push(i);
+			}
+		}
+		
+		deleteBlocks(blocksToDelete);
+		blocksNextIndex = canvasBlocks.length;
+
+		blocksToCombine.sort(function(a,b){
+			return a.left_position-b.left_position
+		});
+
+		for(i=0; i<blocksToCombine.length; i++){
+			var $block = $('<div/>', {
+				"class": blocksToCombine[i].classes + ' in_combined_block_' + combinationsNextIndex,
+				"id": "block" + (i+blocksNextIndex),
+//				"contentEditable": "true",
+				text: blocksToCombine[i].text
+			});
+			blockAppend($block);
+	    	bindSelected($block);
+		    canvasBlocks.push(blocksToCombine[i].text);
+			textLabels.push(blocksToCombine[i].text_label);
+			if($block.is('.labeled')){
+					var labelClass = "text_labels"
+					labelAppend($block,i+blocksNextIndex,labelClass);
+					$("#label"+(i+blocksNextIndex)).addClass("in_combined_block_" + combinationsNextIndex);
+			}
+			
+		}
+		blocksNextIndex = canvasBlocks.length;
+
+		var $combinationBlock = $('<div/>', {
+				"class": "drag drop combination combined_block_" + combinationsNextIndex,
+				"id": "block" + blocksNextIndex,
+			});
+		
+		blockAppend($combinationBlock);
+		var combinationBlockWidth = 0;
+		var combinationBlockHeight = 0;
+		$(".in_combined_block_"+combinationsNextIndex).not(".text_labels").each(function(){
+			combinationBlockWidth = combinationBlockWidth + $(this).outerWidth();
+			if($(this).is(".labeled")){
+				combinationBlockHeight = $(this).outerHeight() + labelSpacer + $(".text_labels").outerHeight() + 2;
+			}else{
+				combinationBlockHeight = $(this).outerHeight() + 2;		
+			}
+		});
+		
+		$combinationBlock.css({ 
+			left: $(".in_combined_block_"+combinationsNextIndex).offset().left-3,
+			width: combinationBlockWidth+(blockSpacer*(blocksToCombine.length-1)) + 2,
+			top: $(".in_combined_block_"+combinationsNextIndex).offset().top-3,
+			height: combinationBlockHeight
+		});
+
+		$('.selected').removeClass('selected');
+		$('.selected_label').removeClass('selected_label');
+
+		bindSelected($combinationBlock);
+//		bindCombined($(".in_combined_block_" + combinationsNextIndex + ", combined_block_"+combinationsNextIndex),combinationsNextIndex);
+		bindCombined($combinationBlock,combinationsNextIndex);
+		textLabels.push("none");
+		canvasBlocks.push(blocksToCombine);
+		blocksNextIndex = canvasBlocks.length;
+		console.log("Labels: " + textLabels);
+		console.log("Blocks: " + canvasBlocks);
+		console.log("Total blocks: " + canvasBlocks.length);
+		console.log("Next index: " + blocksNextIndex);
+	});
+
+// Takes selected blocks and creates two arrays,
+// one with word blocks to make new blocks to send to blockAppend()
+// one with word blocks to delete to send to deleteBlocks()
+// Arranges words for new blocks according to left position on canvas
+// sends new blocks to bindSelected()
+	$('#reorder_selected').click(function(){
+		var blocksToConnect = [];
+		var blocksToDelete = [];
+
+		if($('.selected').length<2){return;}
+
+		for(i=0; i<canvasBlocks.length; i++){
+		    if($("#block"+i).hasClass('selected')){
+				blocksToConnect.push({'text': $("#block"+i).text(),
+				                    'left_position': $("#block"+i).offset().left,
+				                    'classes': $("#block"+i).attr('class'),
+									'text_label':textLabels[i]});
+				blocksToDelete.push(i);
+		    }
+		}
+		
+		blocksToConnect.sort(function(a,b){
+			return a.left_position-b.left_position
+		});
+
+		for(i=0; i<blocksToConnect.length; i++){
+			var $block = $('<div/>', {
+				"class": blocksToConnect[i].classes + " do_not_delete",
+				"id": "block" + (i+blocksNextIndex),
+				"contentEditable": "true",
+				text: blocksToConnect[i].text
+			});
+			blockAppend($block);
+	    	bindSelected($block);
+		    canvasBlocks.push(blocksToConnect[i].text);
+			textLabels.push(blocksToConnect[i].text_label);
+		}
+
+		deleteBlocks(blocksToDelete);
+		$('.do_not_delete').delay(700).removeClass("do_not_delete");
+		blocksNextIndex = canvasBlocks.length;
+// Have to labelAppend AFTER deleting blocks
+		for(i=0; i<canvasBlocks.length; i++){		
+			if($("#block"+i).is('.labeled')){
+				var labelClass = "text_labels";
+				labelAppend($("#block"+i),i,labelClass);
+			}
+		}
+		console.log("Labels: " + textLabels);
+		console.log("Blocks: " + canvasBlocks);
+		console.log("Total blocks: " + canvasBlocks.length);
+		console.log("Next index: " + blocksNextIndex);
+	});
+
+// Takes selected blocks and creates two arrays,
+// one with word blocks to make new blocks to send to blockAppend()
+// one with blocks to separate and send to deleteBlocks()
+// sends new blocks to bindSelected()
+	$('#separate_selected').click(function(){
+		var blocksToSeparate = [];
+		var splitWords = [];
+		var phraseToSplit = "";
+		
+		if(!$('.selected.combined').length){return;}
+
+		
+		for(i=0; i<canvasBlocks.length; i++){
+			if($("#block"+i).hasClass("selected") && $("#block"+i).hasClass("combined")){
+				blocksToSeparate.push(i);
+				phraseToSplit = phraseToSplit + " " + $("#block"+i).text();
+				phraseToSplit = phraseToSplit.replace(/[!@#\$%\^&\*\(\)_\-\+=\[\]\{\}\\\|;:'",\.\/<>\?`~]/g," ")
+									.replace(/\s{2,}/g," ")
+									.replace(/(^\s+)|(\s+$)/g,"");
+				splitWords = phraseToSplit.split(" ");
+
+			}
+		}
+				for (j=0; j<splitWords.length; j++){
+					var $block = $("<div/>", {
+						"class": "drag drop",
+						"id": "block" + (j+blocksNextIndex),
+						"contentEditable": "true",
+						text: splitWords[j]
+					});
+					blockAppend($block);
+					bindSelected($block);
+					canvasBlocks.push(splitWords[j]);
+					textLabels.push("none")
+				}
+		if(blocksToSeparate.length>0){
+			deleteBlocks(blocksToSeparate);
+		}
+		blocksNextIndex = canvasBlocks.length;
+		console.log("Labels: " + textLabels);
+		console.log("Blocks: " + canvasBlocks);
+		console.log("Total blocks: " + canvasBlocks.length);
+		console.log("Next index: " + blocksNextIndex);
+	});
+
+// Position "control_options" div based on corresponding "controlbutton" div offset()
+// Make "control_options" div slide down from that position
+    $('.control_options').click(function () {
+        var leftValue = $(this).offset().left;
+        var topValue = $(this).offset().top + $(this).outerHeight() + 5;
+		
+		// close every other "options" div when clicking on another options button
+		$.each(controlOptionPairs, function( key, value ) {
+			if(!$('#'+key).is(":focus")){
+				$('#'+value).slideUp('fast');
+			}
+		});
+		// assign id to variable from controlOptionPairs array
+        var controlButton = $(this).attr('id');
+		// assign value of id key from controlOptionPairs array
+        var controlOptions = controlOptionPairs[controlButton];
+		$('#'+controlOptions)
+            .css({
+				"left": leftValue,
+				"top": topValue
+			})
+            .slideToggle('fast');
+//		$('.options').not($(this)).slideUp('fast');
+    });
+
+// Add block for each child element of option divs 
+    $('.append_options').children().click(function () {
+        var optionToAdd = $(this).val();
+		var $block = $('<div/>', {
+			"class": "drag drop",
+			"id": "block" + (blocksNextIndex),
+			"contentEditable": "true",
+			text: optionToAdd,
+		});
+		blockAppend($block);
+        bindSelected($block);
+		canvasBlocks.push(optionToAdd);
+		blocksNextIndex = canvasBlocks.length;
+		console.log("Labels: " + textLabels);
+		console.log("Blocks: " + canvasBlocks);
+		console.log("Total blocks: " + canvasBlocks.length);
+		console.log("Next index: " + blocksNextIndex);
+	});
+
+// Change color of "selected" for each child element of label options div
+// Place text label under selected block 
+    $('.label_options').children().click(function () {
+		var selectedBlocks = []; //variable to count selected blocks
+		for(i=0; i<canvasBlocks.length; i++){
+			if($("#block"+i).hasClass("selected")){
+				selectedBlocks.push(i);
+			}
+		}
+		if(selectedBlocks.length==1){
+		var leftValue = $('.selected').offset().left;
+		var topValue = $('.selected').offset().top + $('.selected').outerHeight() + labelSpacer;
+		var widthValue = $('.selected').outerWidth();
+		var labelToAssign = $(this).attr('id');
+		var labelText = labelTextPairs[labelToAssign];
+		textLabels[selectedBlocks[0]] = labelText; 
+		var $textLabel = $('<div/>', {
+			"class": "text_labels",
+			"id": "label"+selectedBlocks[0],
+			text: labelText,
+		});
+		$(document.body).append($textLabel);
+		$textLabel.css({ 
+			top: topValue,
+			left: leftValue,
+			width: widthValue
+		});
+
+		$('.selected')
+			.addClass(labelToAssign+' labeled')
+			.removeClass('selected');
+			
+		bindLabeled("#block"+selectedBlocks[0], "#label"+selectedBlocks[0]);
+		}
+	});
+
+// Remove assigned label of "selected" block 
+    $('#remove_label').click(function () {
+		$('.selected').removeClass().addClass('drag drop');
+	});
+
+// Appends each new word block
+// Checks position of each appended block to preserve canvas boundary
+	function blockAppend($block){
+		$(document.body).append($block);
+		$block.css({ 
+			top: topValue,
+			left: leftValue
+		});
+        
+		if(leftValue+$block.outerWidth()+canvasMargin>$canvas.offset().left+$canvas.width()){
+			topValue = topValue + $block.outerHeight() + blockSpacer;
+			leftValue = $canvas.offset().left + canvasMargin;
+			$block.css({
+				"left": leftValue,
+				"top": topValue
+			});
+			leftValue = leftValue + $block.outerWidth() + blockSpacer;
+		}else{
+			leftValue = leftValue + $block.outerWidth() + blockSpacer;
+		}
+	} //end blockAppend()
+
+// Appends each new textlabel
+// Checks position of each block to preserve alignment
+// rebinds each new $block-$label pair
+	function labelAppend($block,index,labelClass){
+		var leftValue = $($block).offset().left;
+        var topValue = $($block).offset().top + $($block).outerHeight() + 2;
+        var widthValue = $($block).outerWidth();
+		var labelText = textLabels[index]; 
+		var $textLabel = $('<div/>', {
+			"class": labelClass,
+			"id": "label"+index,
+			text: labelText,
+		});
+		$(document.body).append($textLabel);
+		$textLabel.css({ 
+			top: topValue,
+			left: leftValue,
+			width: widthValue
+		});
+		if($block.is('.selected')){
+			$textLabel.addClass('selected_label');
+		}
+        bindLabeled("#block"+index, "#label"+index);
+	} //end labelAppend()
+
+// Reappends existing blocks
+// Resets left and top values of canvas
+// Accepts selectBlocks array to preserve selected status in reappended blocks
+// Deletes all existing blocks, so sends each $block to blockAppend()
+// and rebinds each one
+// Deletes all existing text_labels, so send each $block and index to labelAppend()
+	function reappendBlocks(blockClasses,labelClasses){
+		leftValue = $canvas.offset().left + appendMargin;
+		topValue = $canvas.offset().top + appendMargin;
+				
+		$('.drag').remove(); // Remove all existing blocks from DOM
+		$('.text_labels').remove(); // Remove all existing labels from DOM
+		
+		for(i=0; i<canvasBlocks.length; i++){
+			if(canvasBlocks[i]){
+				var $block = $('<div/>', {
+				"class": blockClasses[i],
+				"id": "block" + i,
+				"contentEditable": "true",
+				text: canvasBlocks[i],
+				});
+			}
+			blockAppend($block);
+			bindSelected($block);
+			if($block.is('.labeled')){
+				labelAppend($block,i,labelClasses[i]);
+			}
+			if($block.is('.combination')){
+				$block.text('');
+				var combinationId = $block.attr("class").split(' ');
+					for (j=0; j<combinationId.length; j++) {
+						if (combinationId[j].indexOf('combined_block_') >= 0) {
+							var idMatch = combinationId[j].replace(/combined_block_/, '');
+						}
+					}
+				var combinationBlockWidth = 0;
+				var combinationBlockHeight = 0;
+				var blocksToCombine = [];
+				
+				$(".in_combined_block_"+idMatch).not(".text_labels").each(function(){
+					combinationBlockWidth = combinationBlockWidth + $(this).outerWidth();
+					blocksToCombine.push(idMatch);
+					if($(this).is(".labeled")){
+						combinationBlockHeight = $(this).outerHeight() + labelSpacer + $(".text_labels").outerHeight() + 2;
+					}else{
+						combinationBlockHeight = $(this).outerHeight() + 2;		
+					}
+				});
+				
+				$block.css({ 
+					left: $(".in_combined_block_"+idMatch).offset().left-3,
+					width: combinationBlockWidth+(blockSpacer*(blocksToCombine.length-1)) + 2,
+					top: $(".in_combined_block_"+idMatch).offset().top-3,
+					height: combinationBlockHeight
+				});
+				
+				bindCombined($block,idMatch);
+			}
+		}
+	}//end reappendBlocks()
+
+// Deletes selected blocks from DOM and canvasBlocks array
+// Renames block ids to reflect new canvasBlocks array
+// Does same two steps for text_labels, if any
+	function deleteBlocks(blocksToDelete){
+		for(i=blocksToDelete.length-1; i>=0; i--){
+			var blockId = blocksToDelete[i];
+			
+			if($("#block"+blockId).is('.labeled')){
+				$('#label'+blockId).addClass('deletelabel');
+			}
+			
+			$("#block"+blockId).removeAttr('id');
+			$("#label"+blockId).removeAttr('id');
+	
+			for(j=1; j<canvasBlocks.length-blockId; j++){
+				if($("#block"+(blockId+j)) != 0){
+					$("#block"+(blockId+j)).attr("id","block"+(blockId+(j-1)));
+				}
+				if($("#label"+(blockId+j)) != 0){
+					$("#label"+(blockId+j)).attr("id","label"+(blockId+(j-1)));
+				}
+			}
+			canvasBlocks.splice(blockId,1);
+			textLabels.splice(blockId,1);
+		}
+		
+		$(".selected, .deletelabel").not(".do_not_delete").fadeOut(600, function(){$(this).remove()});
+
+	}//end deleteBlocks()
+
+// ThreeDubMedia "draginit" does not work with "live"
+// Had to make a separate functions that would fire after each block or label is appended
+// The result is that each individual block and label is bound to all necessary events
+// Blocks and labels move in unison, no toggle problems
+	function bindSelected($block){
+		$block
+			.click (function(){
+				$(this).toggleClass('selected');
+				if($(this).is('.labeled')){
+					var idMatch = $(this).attr('id').replace(/block/, '');
+					$('#label'+idMatch).toggleClass('selected_label');
+				}
+				$(this).focus(); // to allow each div to be edited
+			})
+			.drag("init",function(){
+				if ($(this).is('.selected'))
+				return $('.selected, .selected_label');
+			})
+			.drag("start",function(){
+				$( this ).css('zIndex', z++ );
+			})
+			.drag(function( ev, dd ){
+				dd.limit = $canvas.offset();
+				dd.limit.bottom = dd.limit.top + $canvas.outerHeight() - $( this ).outerHeight();
+				dd.limit.right = dd.limit.left + $canvas.outerWidth() - $( this ).outerWidth();
+				$(this).css({
+					top: Math.min( dd.limit.bottom - canvasMargin, Math.max( dd.limit.top + canvasMargin, dd.offsetY ) ),
+					left: Math.min( dd.limit.right - canvasMargin, Math.max( dd.limit.left + canvasMargin, dd.offsetX ) )
+				});
+			});
+	}// end bindSelected()
+	
+	function bindLabeled($block, $label){
+		$($block + ", " + $label)
+			.drag("init", function(){
+				if ($(this).is('.labeled, .text_labels') && !$(this).is('.selected, .selected_label')){
+					return $($block + ", " + $label);
+				}else if($(this).is('.labeled, .text_labels') && $(this).is('.selected, .selected_label')){
+					return $('.selected, .selected_label');
+				}
+			})
+			.drag("start",function(){
+				$( this ).css('zIndex', z++ );
+			})
+			.drag(function( ev, dd ){
+				dd.limit = $canvas.offset();
+				dd.limit.bottom = dd.limit.top + $canvas.outerHeight() - $( this ).outerHeight();
+				dd.limit.right = dd.limit.left + $canvas.outerWidth() - $( this ).outerWidth();
+				if($(this).is(".labeled")){
+					$(this).css({
+						top: Math.min( dd.limit.bottom - canvasMargin - ($(".text_labels").outerHeight()+labelSpacer), Math.max( dd.limit.top + canvasMargin, dd.offsetY ) ),
+						left: Math.min( dd.limit.right - canvasMargin, Math.max( dd.limit.left + canvasMargin, dd.offsetX ) )
+					});
+				}else if($(this).is(".text_labels")){
+					$(this).css({
+						top: Math.min( dd.limit.bottom - canvasMargin, Math.max( dd.limit.top + canvasMargin + ($(".labeled").outerHeight()+labelSpacer), dd.offsetY ) ),
+						left: Math.min( dd.limit.right - canvasMargin, Math.max( dd.limit.left + canvasMargin, dd.offsetX ) )
+					});				
+				}
+			});			
+	}// end bindLabeled()
+
+	function bindCombined(combinedblock,index){
+		$(combinedblock)
+			.drag("init", function(){
+				if ($(this).is(".combined_block_" + index)){
+					return $(".combined_block_" + index + ", .in_combined_block_" + index);
+				}
+			})
+			.drag("start",function(){
+				$( this ).css('zIndex', z++ );
+			})
+			.drag(function( ev, dd ){
+				dd.limit = $canvas.offset();
+				dd.limit.bottom = dd.limit.top + $canvas.outerHeight() - $( this ).outerHeight();
+				dd.limit.right = dd.limit.left + $canvas.outerWidth() - $( this ).outerWidth();
+				$(this).css({
+					top: Math.min( dd.limit.bottom - canvasMargin, Math.max( dd.limit.top + canvasMargin, dd.offsetY ) ),
+					left: Math.min( dd.limit.right - canvasMargin, Math.max( dd.limit.left + canvasMargin, dd.offsetX ) )
+				});
+			});			
+	}// end bindCombined()
+});
+</script>
+
+<div id="controls_upper1">
+	<input type="button" id="select_all" value="Select All" />
+	<input type="button" id="deselect_all" value="Deselect All" />
+	<input type="button" id="reorder_all" value="Reorder" />
+	<input type="button" id="reappend_all" value="Reset" />
+	<input type="button" id="delete_selected" value="Delete" />
+	<input type="button" id="remove_label" value="Remove Label" />
+	<input type="button" id="clear_canvas" value="Clear Canvas" />
+	<input type="button" id="clear_labels" value="Clear Labels" />
+</div>
+<div id="controls_upper2">
+	<input type="button" id="combine_selected_2" value="Connect" />
+	<input type="button" id="combine_selected" value="Combine" />
+	<input type="button" id="separate_selected" value="Separate" />
+	<input type="button" id="add_label" class="control_options" value="Label Selected" />
+	<input type="button" id="add_conjunction" class="control_options" value="Add conjunction" />
+	<input type="button" id="add_tw" class="control_options" value="Add Transition Word" />
+	<input type="button" id="add_dw" class="control_options" value="Add Dependent Word" />
+	<input type="button" id="add_punctuation" class="control_options" value="Punctuation" />
+</div>
+<div id="container">
+</div>
+<div id="controls_lower">
+	<input type="button" id="add_words" value="Add a Word, Phrase, or Sentence" /><textarea rows="2" id="word_input">the quick brown fox</textarea>
+</div>
+<div id="labels" class="options label_options">
+</div>
+<div id="conjunctions" class="options append_options">
+</div>
+<div id="transition_words" class="options append_options">
+</div>
+<div id="dependent_words" class="options append_options">
+</div>
+<div id="punctuation_marks" class="options append_options">
+</div>
+</body>
+</html>

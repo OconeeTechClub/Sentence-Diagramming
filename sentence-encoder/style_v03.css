@@ -1,0 +1,160 @@
+.selection {
+   position: absolute;
+   opacity: .65;
+   border: 1px solid #8B9;
+   background: #BEC;
+   }
+
+.drag {
+   position: absolute;
+/*   border: 1px solid #89B;*/
+   background: #BCE;
+   cursor: move;
+   text-align: center;
+   border-radius:5px;
+   font-family:verdana;
+   font-size: .9em;
+   padding: 5px;
+   }
+
+.subject {
+	background:#9af;
+/*	border: 1px solid #9af;*/
+}
+
+.verb {
+	background:#9e6;
+/*	border: 1px solid #9e6;*/
+}
+
+.indirect_object {background:#02f}
+.direct_object {background:#02f}
+.noun_phrase {background:#02f}
+.verb_phrase {background:#02f}
+.prep_phrase {background:#02f}
+.modifier {background:#02f}
+.dependent_clause {background:#02f}
+.independent_clause {background:#02f}
+
+.selected {
+/*   border: 2px solid #fc0;
+   border: 1px solid #B89;*/
+   background: #EBC;
+   }   
+   
+.active {  
+/*   border: 1px solid #9B8;*/
+   background: #CEB;
+   }
+
+.combination{
+	padding: 0px 0px;
+	background:none;
+	border: 2px solid #fc0;
+}   
+
+#container {
+	width:75%;
+	height:300px;
+	background:gray;
+	border-radius:10px;
+	margin: 0 auto;
+}
+
+html {
+height:100%;
+width:100%;
+}
+
+body {
+height:100%;
+width:100%;
+
+}
+#controls_upper1{
+margin:0 auto;
+width: 75%;
+
+}
+#controls_upper2{
+margin:0 auto;
+width: 75%;
+
+}
+#controls_lower{
+margin:0 auto;
+width: 75%;
+}
+
+#word_input{
+	float: left;
+	height: 32px;
+	margin-top: 2px;
+	width: 70%;
+}
+
+p{
+font-family:verdana;
+}
+
+/*#deleteselected, #clearcanvas, #reappendall, #reorderall, #selectall, #deselectall {
+float: right;
+}*/
+
+#add_words{
+	width:150px;
+	white-space: normal;
+	float: left;
+	margin-right: 3px;
+}
+
+input[type=button], input[type=text] {
+    border-radius:3px;
+}
+
+input[type=text] {
+    padding-left: 5px;
+}
+
+.options {
+    display: none;
+    position: absolute;
+    background: #eee;
+    border-radius: 3px;
+    z-index: 1000;
+}
+
+.text_labels {
+    position: absolute;
+    background: #ddd;
+    border-radius: 2px;
+	text-align: center;
+	font-size: 10px;
+	margin-top:0;
+/*    z-index: 50;*/
+	cursor:move;
+}
+
+#labels {
+	width: 200px;
+}
+
+#conjunctions {
+	width: 160px;
+}
+
+#transition_words {
+	width: 450px;
+}
+
+#dependent_words {
+	width: 250px;
+}
+
+#punctuation_marks {
+	width: 200px;
+}
+
+div:focus {
+    outline: 0;
+}
