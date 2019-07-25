@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link href="encoding.css" rel="stylesheet" type="text/css" media="all">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script>
+function processText() {
+    var sentence = $("#input").val().split(" ");
+    var ret = '<span class="sentence">';
+    for(i = 0; i < sentence.length; i++) {
+        //ret += (???.addClass('word').attr("id",String(i)).text(sentence[i])).html();
+        ret += '<span class="word" '+'id='+String(i)+'>'+sentence[i]+'</span> ';
+    }
+    ret += "</span>";
+    console.log(ret);
+    $("#output").html(ret.trim());
+}
+</script>
+</head>
+<body>
+<div>
+    <button onclick="processText()">Process</button>
+    <form style="display: inline;"><input type="text" class="input-text" id="input"></form>
+</div>
+<div id="output" class="output-box"></div>
+</body>
+</html>
