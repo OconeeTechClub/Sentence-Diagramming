@@ -9,7 +9,9 @@ function processText() {
     var ret = '<span class="sentence">';
     for(i = 0; i < sentence.length; i++) {
         //ret += (???.addClass('word').attr("id",String(i)).text(sentence[i])).html();
-        ret += '<span class="word" '+'id='+String(i)+'>'+sentence[i]+'</span> ';
+        if(sentence[i]) {
+            ret += '<span class="word" '+'id='+String(i)+'>'+sentence[i]+'</span> ';   
+        }
     }
     ret += "</span>";
     console.log(ret);
