@@ -1,0 +1,10 @@
+div.output-box {
+    width: 80%;
+    height: 200px;
+    padding: 10px;
+    margin: 25px 5%;
+    background-color: #efefef;
+}
+.input-text {
+    width: 255px;
+}
