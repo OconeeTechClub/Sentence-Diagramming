@@ -5,21 +5,24 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 <script>
 function processText() {
-    var sentence = $("#input").val().split(" ");
-    var ret = '<span class="sentence">';
+    $("#output").children().remove(); //Clear the output box
+    var sentence = $("#input").val().split(" "); //Format the input into a list
     for(i = 0; i < sentence.length; i++) {
-        //ret += (???.addClass('word').attr("id",String(i)).text(sentence[i])).html();
-        ret += '<span class="word" '+'id='+String(i)+'>'+sentence[i]+'</span> ';
+        if(sentence[i]) { //Check for empty elements caused by multiple spaces
+            var ret = $('<div/>', {"class" : "word", "id" : String(i), text : sentence[i]});
+            console.log(ret);
+            $("#output").append(ret);
+        }
     }
-    ret += "</span>";
-    console.log(ret);
-    $("#output").html(ret.trim());
 }
+$(".word").click(function(event){
+   console.log( $( this ).text() ); 
+});
 </script>
 </head>
 <body>
 <div>
-    <button onclick="processText()">Process</button>
+    <button onClick="processText()">Process</button>
     <form style="display: inline;"><input type="text" class="input-text" id="input"></form>
 </div>
 <div id="output" class="output-box"></div>

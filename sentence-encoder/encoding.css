@@ -8,3 +8,7 @@ div.output-box {
 .input-text {
     width: 255px;
 }
+.word {
+    display: inline;
+    margin-right: 5px;
+}
